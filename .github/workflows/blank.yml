@@ -3,37 +3,53 @@ name: Deploy to OpenShift
 on:
   push:
     branches:
-      - main
+      - main  # Trigger deployment on push to the main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up SSH tunnel to Kubernetes API
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Forward Kubernetes API through SSH tunnel
+      # Set up kubeconfig with the public IP of the OpenShift API server
+      - name: Set up kubeconfig
         run: |
-          ssh -N -L 6443:localhost:6443 ${{ secrets.EC2_HOST }} &
-          sleep 10
+          mkdir -p ~/.kube
+          echo "apiVersion: v1
+          kind: Config
+          clusters:
+          - cluster:
+              server: https://3.110.220.235:6443
+              insecure-skip-tls-verify: true
+            name: openshift
+          contexts:
+          - context:
+              cluster: openshift
+              user: admin
+            name: default
+          users:
+          - name: admin
+            user:
+              token: ${KUBE_TOKEN}" > ~/.kube/config
+          chmod 600 ~/.kube/config
 
+      # Install OpenShift CLI
       - name: Install OpenShift CLI
         run: |
           curl -L https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar -xz
-          sudo mv oc /usr/local/bin/
+          sudo mv oc /usr/local/bin/oc
           oc version
 
-      - name: Verify Kubernetes context
+      # Verify that we are logged into the OpenShift cluster
+      - name: Verify OpenShift context
         run: |
-          kubectl config set-cluster kubernetes --server=https://localhost:6443 --insecure-skip-tls-verify=true
-          kubectl get nodes
-          
-      - name: Apply Kubernetes manifests
+          oc whoami
+          oc get nodes
+
+      # Apply Kubernetes manifests using oc
+      - name: Apply OpenShift manifests
         run: |
-          kubectl apply -f clusters/openshift-cluster/flux-system/base
+          oc apply -f clusters/openshift-cluster/flux-system/base
