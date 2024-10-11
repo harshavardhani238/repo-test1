@@ -36,6 +36,11 @@ jobs:
               token: ${{ secrets.KUBE_TOKEN }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
+      # Debug: Output kubeconfig file for verification
+      - name: Debug kubeconfig
+        run: |
+          cat ~/.kube/config
+
       # Install OpenShift CLI
       - name: Install OpenShift CLI
         run: |
