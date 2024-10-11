@@ -14,47 +14,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up kubeconfig with the public IP of the OpenShift API server
+      # Create the .kube directory and set up kubeconfig
       - name: Set up kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "apiVersion: v1
-          kind: Config
-          clusters:
-          - cluster:
-              server: https://3.110.220.235:6443
-              insecure-skip-tls-verify: true
-            name: openshift
-          contexts:
-          - context:
-              cluster: openshift
-              user: admin
-            name: default
-          users:
-          - name: admin
-            user:
-              token: ${{ secrets.KUBE_TOKEN }}" > ~/.kube/config
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
-
-      # Debug: Output kubeconfig file for verification
-      - name: Debug kubeconfig
-        run: |
-          cat ~/.kube/config
 
       # Install OpenShift CLI
       - name: Install OpenShift CLI
         run: |
           curl -L https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar -xz
-          sudo mv oc /usr/local/bin/oc
+          sudo mv oc /usr/local/bin/
           oc version
 
       # Verify that we are logged into the OpenShift cluster
-      - name: Verify OpenShift context
+      - name: Verify Kubernetes context
         run: |
-          oc whoami
-          oc get nodes
+          kubectl config get-contexts
+          kubectl get nodes
 
-      # Apply Kubernetes manifests using oc
-      - name: Apply OpenShift manifests
+      # Apply Kubernetes manifests
+      - name: Apply Kubernetes manifests
         run: |
-          oc apply -f clusters/openshift-cluster/flux-system/base
+          kubectl apply -f clusters/openshift-cluster/flux-system/base
