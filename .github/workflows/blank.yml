@@ -33,7 +33,7 @@ jobs:
           users:
           - name: admin
             user:
-              token: ${KUBE_TOKEN}" > ~/.kube/config
+              token: ${{ secrets.KUBE_TOKEN }}" > ~/.kube/config
           chmod 600 ~/.kube/config
 
       # Install OpenShift CLI
