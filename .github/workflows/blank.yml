@@ -25,16 +25,16 @@ jobs:
       - name: Install OpenShift CLI
         run: |
           curl -L https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar -xz
-          sudo mv oc /usr/local/bin/
+          sudo mv oc /usr/local/bin/oc
           oc version
 
       # Verify that we are logged into the OpenShift cluster
-      - name: Verify Kubernetes context
+      - name: Verify OpenShift context
         run: |
-          kubectl config get-contexts
-          kubectl get nodes
+          oc whoami
+          oc get nodes
 
-      # Apply Kubernetes manifests
-      - name: Apply Kubernetes manifests
+      # Apply Kubernetes manifests using oc
+      - name: Apply OpenShift manifests
         run: |
-          kubectl apply -f clusters/openshift-cluster/flux-system/base
+          oc apply -f clusters/openshift-cluster/flux-system/base
