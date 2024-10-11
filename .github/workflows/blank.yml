@@ -1,0 +1,40 @@
+name: Deploy to OpenShift
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment on push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Create the .kube directory and set up kubeconfig
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      # Install OpenShift CLI
+      - name: Install OpenShift CLI
+        run: |
+          curl -L https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz | tar -xz
+          sudo mv oc /usr/local/bin/
+          oc version
+
+      # Verify that we are logged into the OpenShift cluster
+      - name: Verify Kubernetes context
+        run: |
+          kubectl config get-contexts
+          kubectl get nodes
+
+      # Apply Kubernetes manifests
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f clusters/openshift-cluster/flux-system/base
